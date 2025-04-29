@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Price Prediction Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#2c3e50',
+              secondary: '#3498db',
+              accent: '#e74c3c',
+              background: '#f5f6fa',
+              card: '#ffffff',
+              naira: '#2ecc71'
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-background font-sans text-primary">
+    <div class="bg-gradient-to-r from-primary to-secondary text-white py-16 mb-10 text-center">
+        <div class="max-w-5xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">Car Price Prediction Dashboard</h1>
+            <p class="text-lg md:text-xl opacity-90 animate-fadeInUp delay-200">Analyzing historical car data to predict future prices</p>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-2 md:px-6">
+        <!-- Toaster notification -->
+        <div id="toaster" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 hidden bg-accent text-white px-6 py-3 rounded shadow-lg font-semibold"></div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between bg-secondary text-white rounded-lg px-4 py-3 mb-6">
+            <p class="mb-2 md:mb-0">Current Exchange Rate: <span id="exchangeRate" class="font-semibold">Loading...</span></p>
+            <p>Last Updated: <span id="lastUpdated" class="font-semibold">Loading...</span></p>
+        </div>
+
+        <div id="modelUsed" class="mb-4 font-semibold"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-card rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold mb-2">Model Performance</h2>
+                <div class="relative h-64">
+                    <canvas id="modelPerformanceChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-card rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold mb-2">USD Price Predictions</h2>
+                <div class="relative h-64">
+                    <canvas id="usdPredictionChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-card rounded-xl shadow p-6">
+                <h2 class="text-xl font-bold mb-2">Naira Price Predictions</h2>
+                <div class="relative h-64">
+                    <canvas id="nairaPredictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Move Car Analysis above Detailed Predictions -->
+        <div class="bg-card rounded-xl shadow p-6 mb-10">
+            <h2 class="text-xl font-bold mb-4">Car Analysis</h2>
+            <div class="flex flex-col md:flex-row border-b border-gray-200 mb-4">
+                <button class="tab-btn px-4 py-2 font-semibold text-primary border-b-2 border-transparent hover:text-secondary focus:outline-none active text-secondary border-secondary" data-tab="trendTab">Trend</button>
+                <button class="tab-btn px-4 py-2 font-semibold text-primary border-b-2 border-transparent hover:text-secondary focus:outline-none" data-tab="predictTab">Predict</button>
+            </div>
+            <div id="trendTab" class="tab-panel active">
+                <div id="trendYearRange" class="mb-2 text-gray-500 text-base"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="trendManufacturer" class="block mb-1 font-medium">Manufacturer:</label>
+                        <select id="trendManufacturer" class="w-full border border-gray-300 rounded px-3 py-2">
+                            <option value="">Select Manufacturer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="trendModel" class="block mb-1 font-medium">Model:</label>
+                        <select id="trendModel" disabled class="w-full border border-gray-300 rounded px-3 py-2">
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-background rounded-lg p-4">
+                        <h3 class="mb-2 font-semibold">USD Price Trend</h3>
+                        <div class="relative h-64">
+                            <canvas id="trendChartUSD"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-background rounded-lg p-4">
+                        <h3 class="mb-2 font-semibold">Naira Price Trend</h3>
+                        <div class="relative h-64">
+                            <canvas id="trendChartNaira"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="predictTab" class="tab-panel hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label for="carManufacturer" class="block mb-1 font-medium">Manufacturer:</label>
+                        <select id="carManufacturer" class="w-full border border-gray-300 rounded px-3 py-2">
+                            <option value="">Select Manufacturer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="carModel" class="block mb-1 font-medium">Model:</label>
+                        <select id="carModel" disabled class="w-full border border-gray-300 rounded px-3 py-2">
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="predictionYear" class="block mb-1 font-medium">Predict Price For Year:</label>
+                        <input type="number" id="predictionYear" min="2025" max="2050" value="2025" class="w-full border border-gray-300 rounded px-3 py-2">
+                    </div>
+                </div>
+                <button id="predictBtn" class="btn bg-secondary text-white px-6 py-2 rounded hover:bg-primary transition">Predict Price</button>
+            </div>
+        </div>
+
+        <!-- Detailed Predictions now below Car Analysis -->
+        <div class="bg-card rounded-xl shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-2">Detailed Predictions</h2>
+            <div class="overflow-x-auto">
+                <table id="predictionsTable" class="min-w-full text-left">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-3 bg-primary text-white">Year</th>
+                            <th class="py-2 px-3 bg-primary text-white">USD Price</th>
+                            <th class="py-2 px-3 bg-primary text-white">Naira Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table content will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-primary text-white py-6 mt-10 text-center">
+        <div class="max-w-6xl mx-auto">
+            <p>&copy; 2025 Car Price Prediction Dashboard</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <style>
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        /* Make predicted prices bold */
+        #predictionsTable tbody tr td:nth-child(2),
+        #predictionsTable tbody tr td:nth-child(3) {
+            font-weight: 600;
+        }
+    </style>
+</body>
+</html>
