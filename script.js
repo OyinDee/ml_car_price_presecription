@@ -172,11 +172,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('lastUpdated').textContent = 
                 new Date().toLocaleString();
 
-            showToaster('Exchange rate updated successfully.', 'success');
+            // Do NOT show toaster here
         } catch (error) {
             console.error('Failed to fetch exchange rate:', error);
             document.getElementById('exchangeRate').textContent = 'Error loading rate';
-            showToaster('Failed to fetch exchange rate.', 'error');
+            // Do NOT show toaster here
         }
     };
 
@@ -369,6 +369,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Update table
                 updatePredictionTable(prediction);
+
+                // Show toaster ONLY when prediction is done
+                showToaster('Price predicted successfully!', 'success');
             } catch (error) {
                 console.error('Prediction failed:', error);
                 alert('Failed to get prediction. Please try again.');
